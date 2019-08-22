@@ -1,0 +1,13 @@
+[Unit]
+Description=Gunicorn instance to serve flaskr
+After=network.target
+
+[Service]
+User={{ user }}
+Group=www-data
+WorkingDirectory={{ proj_path }}
+Environment="PATH={{ venv_path }}/bin"
+ExecStart={{ venv_path }}/bin/gunicorn --workers 5 --bind unix:flaskr.sock -m 007 wsgi:app
+
+[Install]
+WantedBy=multi-user.target

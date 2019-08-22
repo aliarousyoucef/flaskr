@@ -1,0 +1,8 @@
+    proj_path: /app/flaskr.botify.com
+    venv_path:   /app/flaskr.botify.com/venv
+    repo_url: https://github.com/silshack/flaskr.git
+    proj_name: flaskr
+    user: ubuntu
+    group: ubuntu
+    wsgi_worker: 5
+    app_port: 8080

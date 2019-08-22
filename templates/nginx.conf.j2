@@ -1,0 +1,29 @@
+server {
+
+    listen {{ app_port }};
+    client_max_body_size 10M;
+    keepalive_timeout    15;
+
+    location / {
+        include proxy_params;
+        proxy_pass        http://unix:{{proj_path}}/flaskr.sock;
+    }
+
+    location /static/ {
+        root            {{ proj_path }};
+        access_log      off;
+        log_not_found   off;
+    }
+
+    location /robots.txt {
+        root            {{ proj_path }}/static;
+        access_log      off;
+        log_not_found   off;
+    }
+
+    location /favicon.ico {
+        root            {{ proj_path }}/static/img;
+        access_log      off;
+        log_not_found   off;
+    }
+}

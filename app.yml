@@ -1,0 +1,90 @@
+- name: Deploy flaskr
+  hosts: web
+  vars_files:
+    - variables.yml
+  tasks:
+
+    - name: Install apt packages
+      become: True
+      apt:
+        pkg: ['git', 'python3-pip','python3-dev', 'nginx']
+        update_cache: yes
+        cache_valid_time: 3600
+
+
+    - name: Create project path
+      become: yes
+      file: 
+        path={{ proj_path }} 
+        state=directory
+        owner={{ user }}
+        group={{ group }}
+
+    - name: Install Python requirements globally via pip
+      pip: 
+        name: ['pip', 'virtualenv', 'virtualenvwrapper'] 
+      
+
+    - name: Install required python packages
+      pip:
+       name: ['gunicorn', 'flask'] 
+       virtualenv: "{{ venv_path }}"
+
+    - name: Check out the repository
+      git: repo={{ repo_url }} dest=/tmp/{{ proj_name }}  force=yes
+
+    - name: copy app files
+      copy: src=/tmp/{{ proj_name }}/ dest={{ proj_path }} remote_src=yes directory_mode=yes
+     
+
+    - name: Fix init DB ( editing flaskr.py)
+      blockinfile:
+        path:  "{{ proj_path }}/flaskr.py"
+        insertbefore: "if __name__" 
+        block: |
+              with app.app_context():
+                init_db()
+
+    - name: Copy wsgi.py file
+      copy: src=files/wsgi.py dest="{{ proj_path }}/wsgi.py"
+      notify: Restart & enable application service
+      
+
+
+    - name: Remove the default nginx config file
+      file: path=/etc/nginx/sites-enabled/default state=absent
+      become: True
+      notify: Restart nginx
+
+    - name: Set the nginx config file
+      template: src=templates/nginx.conf.j2 dest=/etc/nginx/sites-available/flaskr.conf
+      become: True
+      notify: Restart nginx
+
+    - name: Enable the nginx config file
+      file:
+        src: /etc/nginx/sites-available/flaskr.conf
+        dest: /etc/nginx/sites-enabled/flaskr.conf
+        state: link
+      become: True
+      notify: Restart nginx
+
+    - name: set {{ proj_name }} systemd config file
+      template: src=templates/systemd.conf.j2 dest=/etc/systemd/system/flaskr.service
+      become: True
+      notify: Restart & enable application service
+
+  handlers:
+    - name: Restart & enable application service
+      become: yes
+      systemd:
+        name: flaskr
+        state: restarted
+        enabled: yes
+
+    - name: Restart nginx
+      become: yes
+      systemd:
+          state: restarted
+          daemon_reload: yes
+          name: nginx

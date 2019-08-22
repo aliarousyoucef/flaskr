@@ -1,0 +1,6 @@
+[web] 
+34.253.236.218
+34.245.197.46
+18.202.198.212
+[web:vars]
+ansible_python_interpreter=/usr/bin/python3
